@@ -1,4 +1,17 @@
 date,amount,category,description
-2025-08-29,500.0,food,shirt
-2025-08-29,512.0,books,fsd
-2025-08-29,500.0,food,"lorem, "
+2025-08-28,150.0,food,Lunch at cafe
+2025-08-28,50.0,travel,Bus fare
+2025-08-27,450.0,clothing,New t-shirt
+2025-08-27,20.0,travel,Rickshaw to market
+2025-08-26,300.0,books,Python textbook
+2025-08-26,75.0,food,Groceries
+2025-08-25,500.0,entertainment,Movie ticket
+2025-08-25,120.0,utilities,Mobile recharge
+2025-08-24,250.0,food,Dinner with friends
+2025-08-24,1000.0,other,Laptop repair
+2025-08-23,80.0,travel,Train ticket
+2025-08-22,60.0,food,Coffee
+2025-08-21,950.0,books,Novel
+2025-08-20,1500.0,clothing,Jeans
+2025-08-19,300.0,entertainment,Concert ticket
+2025-08-18,200.0,food,Pizza
