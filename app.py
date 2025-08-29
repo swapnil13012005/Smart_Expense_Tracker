@@ -10,6 +10,7 @@ app = Flask(__name__)
 CSV_FILE = 'expenses.csv'
 
 class Expense:
+    """A single expense entry."""
     def __init__(self, amount, category, description, date=None):
         self.amount = amount
         self.category = category
@@ -17,11 +18,13 @@ class Expense:
         self.date = date if date else datetime.date.today()
 
 class ExpenseTracker:
+    """Manages expense records and reporting."""
     def __init__(self):
         self.expenses = self.load_expenses()
         self.allowed_categories = ['food', 'clothing', 'travel', 'books', 'entertainment', 'utilities', 'other']
 
     def load_expenses(self):
+        """Load expenses from CSV file."""
         expenses = []
         if os.path.exists(CSV_FILE):
             with open(CSV_FILE, mode='r', newline='', encoding='utf-8') as file:
@@ -39,6 +42,7 @@ class ExpenseTracker:
         return expenses
 
     def save_expenses(self):
+        """Save expenses to CSV file."""
         with open(CSV_FILE, mode='w', newline='', encoding='utf-8') as file:
             fieldnames = ['date', 'amount', 'category', 'description']
             writer = csv.DictWriter(file, fieldnames=fieldnames)
@@ -52,6 +56,7 @@ class ExpenseTracker:
                 })
 
     def add_expense(self, amount, category, description):
+        """Add a new expense."""
         try:
             amount = float(amount)
             category = category.lower()
@@ -71,15 +76,19 @@ class ExpenseTracker:
             return "Invalid amount. Please enter a valid number."
 
     def get_expenses_by_category(self, category):
+        """Get expenses for a specific category."""
         return [expense for expense in self.expenses if expense.category == category.lower()]
 
     def get_total_expenses(self):
+        """Calculate total expenses."""
         return sum(expense.amount for expense in self.expenses)
 
     def get_expenses_for_month(self, year, month):
+        """Get expenses for a given month."""
         return [expense for expense in self.expenses if expense.date.year == int(year) and expense.date.month == int(month)]
 
     def generate_report(self):
+        """Generate a report with totals and summaries."""
         total_expenses = self.get_total_expenses()
         category_summary = {}
         for expense in self.expenses:
@@ -96,10 +105,12 @@ tracker = ExpenseTracker()
 
 @app.route('/')
 def index():
+    """Home page: add and view expenses."""
     return render_template('index.html', expenses=tracker.expenses, categories=tracker.allowed_categories)
 
 @app.route('/add', methods=['POST'])
 def add():
+    """Add a new expense."""
     amount = request.form['amount']
     category = request.form['category']
     description = request.form['description']
@@ -108,11 +119,13 @@ def add():
 
 @app.route('/report')
 def report():
+    """Show detailed expense report."""
     report_data = tracker.generate_report()
     return render_template('report.html', report=report_data)
 
 @app.route('/download_report_csv')
 def download_report_csv():
+    """Download report as CSV."""
     report_data = tracker.generate_report()
     
     si = io.StringIO()
@@ -139,6 +152,7 @@ def download_report_csv():
 
 @app.route('/api/category_summary')
 def get_category_summary_api():
+    """API: category summary as JSON."""
     report_data = tracker.generate_report()
     return jsonify(report_data['category_summary'])
 
