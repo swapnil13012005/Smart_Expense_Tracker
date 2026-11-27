@@ -1,73 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Expense Tracker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101827">
+  <title>SpendWise · Expense Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="/"><span class="brand-mark">S</span><span>Spend<span class="brand-light">Wise</span></span></a>
+    <div class="side-label">WORKSPACE</div>
+    <a class="nav-link active" href="/"><span>▦</span> Overview</a>
+    <a class="nav-link" href="#transactions"><span>↕</span> Transactions</a>
+    <a class="nav-link" href="#insights"><span>✧</span> AI Insights</a>
+    <a class="nav-link" href="/report"><span>▤</span> Reports</a>
+    <div class="sidebar-bottom"><div class="help-card"><span class="help-icon">✦</span><strong>Your money, clearer.</strong><p>Small insights can make a big difference.</p></div><div class="profile"><div class="avatar">U</div><div><strong>Personal account</strong><small>Expense tracker</small></div></div></div>
+  </aside>
 
-    <div class="container">
-        <h1 class="fade-in">Smart Expense Tracker 💰</h1>
-        
-        <div class="card add-expense-section slide-in-left">
-            <h2>Add New Expense</h2>
-            <form action="/add" method="post">
-                <div class="form-group">
-                    <label for="amount">Amount (INR):</label>
-                    <input type="number" id="amount" name="amount" required step="0.01" placeholder="e.g., 500.25">
-                </div>
-                <div class="form-group">
-                    <label for="category">Category:</label>
-                    <select id="category" name="category" required>
-                        {% for category in categories %}
-                        <option value="{{ category }}">{{ category | capitalize }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="description">Description:</label>
-                    <input type="text" id="description" name="description" required placeholder="e.g., Dinner with friends">
-                </div>
-                <button type="submit" class="btn btn-primary">Add Expense</button>
-            </form>
-        </div>
+  <main class="main-content">
+    <header class="topbar"><div><div class="eyebrow">YOUR FINANCES AT A GLANCE</div><h1>Overview</h1><p class="subheading">Track your spending and make every rupee count.</p></div><a class="date-chip" href="/report">↗ <span>View reports</span></a></header>
 
-        <div class="card all-expenses-section slide-in-right">
-            <h2>All Expenses</h2>
-            {% if expenses %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Amount</th>
-                        <th>Category</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for expense in expenses %}
-                    <tr>
-                        <td>{{ expense.date }}</td>
-                        <td>₹ {{ "%.2f"|format(expense.amount) }}</td>
-                        <td>{{ expense.category | capitalize }}</td>
-                        <td>{{ expense.description }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p class="no-expenses">No expenses recorded yet. Start adding some! 🎉</p>
-            {% endif %}
-        </div>
+    <section class="stats-grid">
+      <article class="stat-card featured"><div class="stat-top"><span>Total spent this month</span><span class="stat-icon">₹</span></div><div class="stat-value" id="month-total">₹0.00</div><div class="stat-foot" id="month-change">Your current month spending</div></article>
+      <article class="stat-card"><div class="stat-top"><span>All-time spending</span><span class="stat-icon purple">◈</span></div><div class="stat-value" id="all-total">₹0.00</div><div class="stat-foot">Across all recorded expenses</div></article>
+      <article class="stat-card"><div class="stat-top"><span>Transactions</span><span class="stat-icon blue">⇄</span></div><div class="stat-value" id="transaction-count">0</div><div class="stat-foot">Recorded transactions</div></article>
+      <article class="stat-card"><div class="stat-top"><span>Average expense</span><span class="stat-icon orange">⌁</span></div><div class="stat-value" id="average-spend">₹0.00</div><div class="stat-foot">Per transaction</div></article>
+    </section>
 
-        <div class="report-actions fade-in">
-            <a href="/report" class="btn btn-secondary">Generate Detailed Report 📊</a>
-        </div>
+    <section class="content-grid">
+      <article class="panel spending-panel"><div class="panel-heading"><div><h2>Spending overview</h2><p>Your monthly spending trend</p></div><span class="panel-tag">Last 6 months</span></div><div class="chart-wrap"><canvas id="monthly-chart"></canvas><div class="empty-chart" id="monthly-empty">Add expenses to see your spending trend.</div></div></article>
+      <article class="panel category-panel"><div class="panel-heading"><div><h2>By category</h2><p>Where your money goes</p></div></div><div class="donut-wrap"><canvas id="category-chart"></canvas><div class="empty-chart" id="category-empty">No category data yet.</div></div><div class="category-legend" id="category-legend"></div></article>
+    </section>
 
-    </div>
+    <section class="content-grid lower-grid">
+      <article class="panel transactions-panel" id="transactions"><div class="panel-heading"><div><h2>Recent transactions</h2><p>Your latest expense activity</p></div><button class="text-button" id="show-all">Show all ↗</button></div><div class="table-tools"><input id="transaction-search" type="search" placeholder="Search transactions..."><select id="category-filter"><option value="">All categories</option>{% for category in categories %}<option value="{{ category }}">{{ category|capitalize }}</option>{% endfor %}</select></div><div class="table-scroll"><table><thead><tr><th>DESCRIPTION</th><th>CATEGORY</th><th>DATE</th><th class="amount-cell">AMOUNT</th><th></th></tr></thead><tbody id="transactions-body"><tr><td colspan="5" class="table-empty">Loading transactions...</td></tr></tbody></table></div></article>
 
-</body>
-</html>
+      <article class="panel add-panel"><div class="panel-heading"><div><h2>Add expense</h2><p>Log a new transaction</p></div><span class="add-symbol">＋</span></div><form id="expense-form" action="/add" method="post">
+        <label for="amount">Amount (INR)</label><div class="amount-input"><span>₹</span><input id="amount" name="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required></div>
+        <label for="category">Category</label><select id="category" name="category" required>{% for category in categories %}<option value="{{ category }}">{{ category|capitalize }}</option>{% endfor %}</select>
+        <label for="description">Description</label><input id="description" name="description" type="text" maxlength="120" placeholder="e.g. Lunch with friends" required>
+        <label for="date">Date</label><input id="date" name="date" type="date" required>
+        <button class="primary-button" type="submit">＋ Add transaction</button><p class="form-message" id="form-message"></p>
+      </form></article>
+    </section>
+
+    <section class="panel assistant-panel" id="insights"><div class="assistant-intro"><div class="assistant-orb">✦</div><div><span class="ai-label">SPENDWISE AI</span><h2>Your personal finance assistant</h2><p>Ask questions about your spending, spot patterns, and get practical ways to save.</p></div></div><div class="suggestion-chips"><button data-prompt="Which category do I spend the most on?">Where do I spend the most?</button><button data-prompt="Compare my spending this month with last month.">Compare this month vs last month</button><button data-prompt="Give me three practical ways to reduce my spending.">How can I save more?</button></div><div class="chat-messages" id="chat-messages"><div class="chat-bubble assistant-bubble">Hi! I'm your spending assistant. Ask me anything about your expense history. <span class="chat-hint">AI answers require a Gemini API key; basic spending insights are available without one.</span></div></div><form id="chat-form" class="chat-form"><input id="chat-input" type="text" placeholder="Ask about your spending..." autocomplete="off" required><button type="submit" aria-label="Send message">↑</button></form></section>
+    <footer>SpendWise · Make smarter spending decisions, one day at a time.</footer>
+  </main>
+</div>
+
+<dialog id="edit-dialog" class="edit-dialog"><form id="edit-form" method="dialog"><div class="dialog-head"><h2>Edit transaction</h2><button type="button" class="close-dialog" id="close-dialog">×</button></div><input type="hidden" id="edit-id"><label for="edit-amount">Amount (INR)</label><input id="edit-amount" type="number" min="0.01" step="0.01" required><label for="edit-category">Category</label><select id="edit-category">{% for category in categories %}<option value="{{ category }}">{{ category|capitalize }}</option>{% endfor %}</select><label for="edit-description">Description</label><input id="edit-description" type="text" required><label for="edit-date">Date</label><input id="edit-date" type="date" required><div class="dialog-actions"><button type="button" class="secondary-button" id="cancel-edit">Cancel</button><button type="submit" class="primary-button">Save changes</button></div></form></dialog>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body></html>
