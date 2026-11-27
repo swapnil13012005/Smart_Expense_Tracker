@@ -22,6 +22,11 @@ A Flask-based personal finance dashboard for recording expenses, understanding s
 
 3. (Optional) Configure Gemini AI:
 
+   Create a `.env` file in the project root:
+   ```dotenv
+   GEMINI_API_KEY=your_api_key
+   ```
+
    **Windows PowerShell**
    ```powershell
    $env:GEMINI_API_KEY="your_api_key"

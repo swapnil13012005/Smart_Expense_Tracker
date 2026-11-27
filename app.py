@@ -3,7 +3,11 @@ import datetime
 import csv
 import io
 import os
+import re
 from collections import defaultdict
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 CSV_FILE = os.environ.get("EXPENSES_CSV", "expenses.csv")
@@ -179,17 +183,29 @@ def assistant():
             prompt = (
                 "You are a helpful personal expense assistant. Answer only using the supplied "
                 "expense data. Never invent totals. Use INR, be concise, explain calculations "
-                "when useful, and give practical non-judgmental suggestions. If data is insufficient, say so.\n\n"
+                "when useful, and give practical non-judgmental suggestions. If data is insufficient, say so. "
+                "Return clean plain text only. Do not use Markdown, bold markers, headings, tables, or code blocks. "
+                "Use short paragraphs and simple hyphenated bullet lines when useful.\n\n"
                 f"Expense data: {context}\n\nUser question: {question}"
             )
-            response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
-            return jsonify({"answer": response.text or "I couldn't generate an answer. Please try again."})
+            models = ("gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.8-flash")
+            last_error = None
+            for model in models:
+                try:
+                    response = client.models.generate_content(model=model, contents=prompt)
+                    if response.text:
+                        return jsonify({"answer": plain_text_response(response.text)})
+                except Exception as error:
+                    last_error = error
+                    app.logger.warning("Gemini model %s failed: %s", model, error)
+            app.logger.error("All Gemini models failed. Last error: %s", last_error)
+            return jsonify({"answer": fallback_answer(question, data, gemini_available=True)})
         except Exception:
             app.logger.exception("Gemini request failed")
-            return jsonify({"answer": fallback_answer(question, data)})
-    return jsonify({"answer": fallback_answer(question, data)})
+            return jsonify({"answer": fallback_answer(question, data, gemini_available=True)})
+    return jsonify({"answer": fallback_answer(question, data, gemini_available=False)})
 
-def fallback_answer(question, data):
+def fallback_answer(question, data, gemini_available):
     category_totals = data["category_totals"]
     if not tracker.expenses:
         return "There are no expenses yet. Add a few transactions and I can help analyse your spending."
@@ -199,10 +215,20 @@ def fallback_answer(question, data):
         insight = f"Your highest-spending category is {top_category.title()} at ₹{category_totals[top_category]:,.2f} ({share:.1f}% of recorded spending)."
     else:
         insight = "There is not enough category data yet."
-    return (f"{insight} You have recorded ₹{data['month_total']:,.2f} this month and "
-            f"₹{data['total']:,.2f} overall. Add a Gemini API key as GEMINI_API_KEY to enable "
-            "natural-language answers to custom questions. Meanwhile, review your largest category "
-            "and set a realistic monthly limit for it.")
+    summary = (f"{insight} You have recorded ₹{data['month_total']:,.2f} this month and "
+               f"₹{data['total']:,.2f} overall.")
+    if gemini_available:
+        return summary + " Gemini is temporarily unavailable. Please try your question again shortly."
+    return summary + " A Gemini API key is not configured; set GEMINI_API_KEY to enable natural-language answers."
+
+def plain_text_response(text):
+    text = re.sub(r"```[^\n]*|```", "", text)
+    text = re.sub(r"(?m)^#{1,6}\s*", "", text)
+    text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+    text = re.sub(r"__([^_]+)__", r"\1", text)
+    text = re.sub(r"(?m)^\s*[*+]\s+", "- ", text)
+    text = re.sub(r"[ \t]+\n", "\n", text)
+    return text.strip()
 
 @app.route("/download_report_csv")
 def download_report_csv():
